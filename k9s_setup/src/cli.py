@@ -71,8 +71,10 @@ def select_host(company: str, inv_data: Dict[str, Any]) -> Tuple[Optional[str], 
         print(f"No hosts found in {company} inventory.", file=sys.stderr)
         sys.exit(1)
 
-    # Build choices with indicators
+    # Build choices with indicators - autocomplete needs string labels
     choices = []
+    label_to_host = {}  # Map display label -> host_name
+
     for host_name in sorted(hosts.keys()):
         group = hosts[host_name]["group"]
         host_info = hosts[host_name]
@@ -90,19 +92,22 @@ def select_host(company: str, inv_data: Dict[str, Any]) -> Tuple[Optional[str], 
         if indicators:
             label += " " + " ".join(indicators)
 
-        choices.append(questionary.Choice(title=label, value=host_name))
+        choices.append(label)
+        label_to_host[label] = host_name
 
     try:
         # Use autocomplete for searchable/filterable list
-        host_name = questionary.autocomplete(
+        selected_label = questionary.autocomplete(
             f"Select host in {company} (type to search):",
             choices=choices,
             match_middle=True  # Allow matching anywhere in the string
         ).ask()
 
-        if host_name is None:  # ESC or Ctrl+C
+        if selected_label is None:  # ESC or Ctrl+C
             return None, None
 
+        # Map label back to host_name
+        host_name = label_to_host[selected_label]
         return host_name, hosts[host_name]
     except KeyboardInterrupt:
         return None, None

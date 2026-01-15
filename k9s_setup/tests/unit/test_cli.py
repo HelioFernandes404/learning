@@ -77,7 +77,8 @@ class TestSelectHost:
         }
 
         with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
-            mock_autocomplete.return_value.ask.return_value = "host1"
+            # Return the full label that would be displayed
+            mock_autocomplete.return_value.ask.return_value = "host1 (k3s_cluster)"
             host_name, host_info = select_host("test", inv_data)
 
         assert host_name == "host1"
@@ -102,13 +103,14 @@ class TestSelectHost:
         }
 
         with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
-            mock_autocomplete.return_value.ask.return_value = "vpnhost"
+            # 192.168.x.x will also trigger sshuttle, so include both indicators
+            mock_autocomplete.return_value.ask.return_value = "vpnhost (k3s_cluster) [VPN] [sshuttle 192.168.1.0/24]"
             select_host("test", inv_data)
 
         # Verify that the choice label contains [VPN]
         call_args = mock_autocomplete.call_args
         choices = call_args[1]['choices']
-        assert any("[VPN]" in choice.title for choice in choices)
+        assert any("[VPN]" in choice for choice in choices)
 
     def test_displays_sshuttle_indicator_for_private_ip(self):
         """Displays [sshuttle] indicator for private IPs."""
@@ -125,13 +127,13 @@ class TestSelectHost:
         }
 
         with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
-            mock_autocomplete.return_value.ask.return_value = "privatehost"
+            mock_autocomplete.return_value.ask.return_value = "privatehost (k3s_cluster) [sshuttle 10.0.0.0/24]"
             select_host("test", inv_data)
 
         # Verify that the choice label contains [sshuttle]
         call_args = mock_autocomplete.call_args
         choices = call_args[1]['choices']
-        assert any("[sshuttle" in choice.title for choice in choices)
+        assert any("[sshuttle" in choice for choice in choices)
 
     def test_handles_cancellation(self):
         """Returns None when user cancels selection."""
