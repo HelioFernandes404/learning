@@ -8,8 +8,24 @@ import sys
 from pathlib import Path
 from typing import Tuple, Dict, Any, Optional
 import questionary
+from questionary import Style
 from .inventory import load_inventories, extract_hosts_from_inventory
 from .network import check_vpn_requirement, check_network_requirement
+
+
+# Define a custom style to override terminal defaults and ensure visibility
+custom_style = Style([
+    ('qmark', 'fg:#E91E63 bold'),       # Pink question mark
+    ('question', 'bold'),               # Bold question text
+    ('answer', 'fg:#2196F3 bold'),      # Blue submitted answer
+    ('pointer', 'fg:#E91E63 bold'),     # Pink pointer
+    ('highlighted', 'fg:#E91E63 bold'), # Pink highlighted choice
+    ('selected', 'fg:#E91E63'),         # Pink selected item
+    ('separator', 'fg:#cc5454'),        # Red separator
+    ('instruction', ''),                # User instructions
+    ('text', ''),                       # Plain text
+    ('disabled', 'fg:#858585 italic')   # Gray disabled choices
+])
 
 
 def select_company(inventory_path: Path) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
@@ -38,7 +54,8 @@ def select_company(inventory_path: Path) -> Tuple[Optional[str], Optional[Dict[s
         company = questionary.autocomplete(
             "Select company (type to search):",
             choices=companies,
-            match_middle=True  # Allow matching anywhere in the string
+            match_middle=True,  # Allow matching anywhere in the string
+            style=custom_style
         ).ask()
 
         if company is None:  # ESC or Ctrl+C
@@ -100,7 +117,8 @@ def select_host(company: str, inv_data: Dict[str, Any]) -> Tuple[Optional[str], 
         selected_label = questionary.autocomplete(
             f"Select host in {company} (type to search):",
             choices=choices,
-            match_middle=True  # Allow matching anywhere in the string
+            match_middle=True,  # Allow matching anywhere in the string
+            style=custom_style
         ).ask()
 
         if selected_label is None:  # ESC or Ctrl+C

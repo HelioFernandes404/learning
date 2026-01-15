@@ -41,7 +41,7 @@ from src.tunnel import (
     get_unique_port, get_tunnel_pid_file, is_tunnel_running,
     kill_tunnel, kill_all_tunnels, create_tunnel, save_tunnel_pid
 )
-from src.cli import select_company, select_host
+from src.cli import select_company, select_host, custom_style
 from src.logging_config import setup_logging, get_logger
 
 # Load environment variables from .env file
@@ -189,7 +189,7 @@ def main():
                 print(f"\n⚠️  WARNING: This host requires VPN (argocd_use_socks5_proxy=true)")
                 print(f"   Make sure your VPN is connected before proceeding.")
                 try:
-                    confirmed = questionary.confirm("Continue?", default=False).ask()
+                    confirmed = questionary.confirm("Continue?", default=False, style=custom_style).ask()
                     if not confirmed or confirmed is None:
                         continue  # Back to host selection
                 except KeyboardInterrupt:
@@ -202,7 +202,7 @@ def main():
                 print(f"   sshuttle -v -r helio@100.64.5.10 {network_range}")
                 print(f"\n   Make sure sshuttle is running before proceeding.")
                 try:
-                    confirmed = questionary.confirm("Continue?", default=False).ask()
+                    confirmed = questionary.confirm("Continue?", default=False, style=custom_style).ask()
                     if not confirmed or confirmed is None:
                         continue  # Back to host selection
                 except KeyboardInterrupt:
@@ -309,7 +309,8 @@ def main():
                 try:
                     retry = questionary.confirm(
                         "Try another host?",
-                        default=True
+                        default=True,
+                        style=custom_style
                     ).ask()
                     if retry:
                         continue  # Back to host selection
