@@ -172,3 +172,29 @@ class TestConfigEdgeCases:
                     os.environ['K3S_API_PORT'] = original_port
         finally:
             Path(config_path).unlink()
+
+    def test_inventory_path_from_config(self):
+        """Test inventory_path can be loaded from config file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump({'inventory_path': '/custom/inventory/path'}, f)
+            config_path = f.name
+
+        try:
+            config = load_config(config_path)
+            inventory_path = get_config_value(config, 'inventory_path', './inventory')
+            assert inventory_path == '/custom/inventory/path'
+        finally:
+            Path(config_path).unlink()
+
+    def test_inventory_path_default_when_not_in_config(self):
+        """Test inventory_path returns default when not in config."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump({'k3s_api_port': 6443}, f)
+            config_path = f.name
+
+        try:
+            config = load_config(config_path)
+            inventory_path = get_config_value(config, 'inventory_path', './inventory')
+            assert inventory_path == './inventory'
+        finally:
+            Path(config_path).unlink()

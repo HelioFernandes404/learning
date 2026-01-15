@@ -7,18 +7,30 @@ Gerenciador de múltiplos clusters Kubernetes com túneis SSH seguros.
 ## 🚀 Quick Start
 
 ```bash
-# 1. Setup inicial (primeira vez)
-./init.sh
+# 1. Ver todos os comandos disponíveis
+make help
 
-# 2. (Opcional) Customizar config
-# Editor: ~/.k9s-config/config.yaml
+# 2. Setup inicial (primeira vez)
+make init
+
+# 3. (Opcional) Customizar config
+make config
+# ou edite: ~/.k9s-config/config.yaml
 # Docs: docs/CONFIG.md
 
-# 3. Adicionar cluster
+# 4. Adicionar cluster
+make add-cluster
+
+# 5. Abrir k9s
+make k9s
+```
+
+### Modo Tradicional (sem Makefile)
+
+```bash
+./init.sh
 source venv/bin/activate
 python3 fetch_k3s_config.py
-
-# 4. Abrir k9s
 ./k9s-with-tunnel.sh
 ```
 
@@ -150,12 +162,19 @@ kubectl config use-context empresa-host
 
 ```bash
 # Ver túneis ativos
-./k9s-with-tunnel.sh list
+make tunnel-list
 
 # Matar túnel específico
-./k9s-with-tunnel.sh kill empresa-host
+make tunnel-kill CONTEXT=empresa-host
 
 # Matar todos
+make tunnel-kill-all
+```
+
+**Modo tradicional:**
+```bash
+./k9s-with-tunnel.sh list
+./k9s-with-tunnel.sh kill empresa-host
 ./k9s-with-tunnel.sh kill-all
 ```
 
@@ -181,11 +200,17 @@ kubectl config delete-context empresa-host
 
 ```
 k9s-config/
+├── Makefile                  # Interface principal (use make help)
 ├── fetch_k3s_config.py      # Script principal
 ├── k9s-with-tunnel.sh        # Helper k9s + túneis
 ├── init.sh                   # Setup venv
 ├── inventory/                # Inventários (Ansible-style)
 │   ├── empresa_hosts.yml
+│   └── ...
+├── src/                      # Módulos Python
+│   ├── inventory.py
+│   ├── ssh.py
+│   ├── tunnel.py
 │   └── ...
 ├── venv/                     # Ambiente Python
 └── README.md                 # Este arquivo
@@ -224,8 +249,8 @@ Host meu-servidor
 ### Executar
 
 ```bash
-source venv/bin/activate
-python3 fetch_k3s_config.py
+make add-cluster
+# ou: source venv/bin/activate && python3 fetch_k3s_config.py
 ```
 
 ---

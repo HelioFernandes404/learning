@@ -77,18 +77,24 @@ if [ ! -d "$LOG_DIR" ]; then
     echo "Created log directory at $LOG_DIR"
 fi
 
-# Run the main script to fetch first kubeconfig
-echo ""
-echo "Running fetch_k3s_config.py..."
-python3 "$PYTHON_SCRIPT"
+# Only run the script if SKIP_FETCH is not set
+if [ -z "${SKIP_FETCH:-}" ]; then
+    echo ""
+    echo "Running fetch_k3s_config.py..."
+    python3 "$PYTHON_SCRIPT"
+fi
 
 echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Edit your config: $CONFIG_DIR/config.yaml"
-echo "  2. Check logs: tail -f $LOG_DIR/k9s-config.log"
-echo "  3. View tunnels: $PROJECT_DIR/k9s-with-tunnel.sh list"
-echo "  4. Launch k9s: $PROJECT_DIR/k9s-with-tunnel.sh"
+echo "  1. Add inventory files to inventory/ directory"
+echo "  2. Edit your config: $CONFIG_DIR/config.yaml"
+echo "  3. Add cluster: make add-cluster (or: python3 fetch_k3s_config.py)"
+echo "  4. Launch k9s: make k9s (or: $PROJECT_DIR/k9s-with-tunnel.sh)"
 echo ""
-echo "For more details, see: $PROJECT_DIR/docs/CONFIG.md"
+echo "To view logs: make logs (or: tail -f $LOG_DIR/k9s-config.log)"
+echo "To list tunnels: make tunnel-list (or: $PROJECT_DIR/k9s-with-tunnel.sh list)"
+echo ""
+echo "For all commands: make help"
+echo "For config details: $PROJECT_DIR/docs/CONFIG.md"

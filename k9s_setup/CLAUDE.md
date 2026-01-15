@@ -8,6 +8,7 @@
 
 **Estrutura**:
 ```
+Makefile                 # Interface principal para comandos (use make help)
 fetch_k3s_config.py      # Script principal (SSH + kubeconfig merge)
 k9s-with-tunnel.sh       # Helper para k9s + gerenciamento de túneis
 init.sh                  # Setup venv + deps
@@ -26,25 +27,44 @@ inventory/               # Inventários Ansible-style (não versionados)
 
 ### Setup (primeira vez)
 ```bash
-./init.sh
+make init
+# ou: ./init.sh
 ```
 
 ### Adicionar cluster
 ```bash
-source venv/bin/activate
-python3 fetch_k3s_config.py
+make add-cluster
+# ou: source venv/bin/activate && python3 fetch_k3s_config.py
 # Seleciona empresa → host → cria túnel + contexto
 ```
 
 ### Usar k9s
 ```bash
-./k9s-with-tunnel.sh  # Verifica túnel e abre k9s -l debug
+make k9s
+# ou: ./k9s-with-tunnel.sh
+# Verifica túnel e abre k9s -l debug
 ```
 
 ### Trocar cluster
 ```bash
 kubectl config use-context empresa-host
-./k9s-with-tunnel.sh
+make k9s
+```
+
+### Gerenciar túneis
+```bash
+make tunnel-list                      # Lista túneis ativos
+make tunnel-kill CONTEXT=nome-ctx     # Mata túnel específico
+make tunnel-kill-all                  # Mata todos os túneis
+```
+
+### Outros comandos úteis
+```bash
+make help          # Mostra todos os comandos disponíveis
+make logs          # Mostra logs do k9s (tail -f)
+make config        # Abre arquivo de configuração
+make clean         # Remove arquivos .yml gerados
+make clean-venv    # Remove virtual environment
 ```
 
 ## Requisitos de Rede

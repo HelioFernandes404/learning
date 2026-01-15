@@ -34,9 +34,11 @@ def select_company(inventory_path: Path) -> Tuple[Optional[str], Optional[Dict[s
     companies = sorted(inventories.keys())
 
     try:
-        company = questionary.select(
-            "Select company:",
-            choices=companies
+        # Use autocomplete for searchable list
+        company = questionary.autocomplete(
+            "Select company (type to search):",
+            choices=companies,
+            match_middle=True  # Allow matching anywhere in the string
         ).ask()
 
         if company is None:  # ESC or Ctrl+C
@@ -91,9 +93,11 @@ def select_host(company: str, inv_data: Dict[str, Any]) -> Tuple[Optional[str], 
         choices.append(questionary.Choice(title=label, value=host_name))
 
     try:
-        host_name = questionary.select(
-            f"Select host in {company}:",
-            choices=choices
+        # Use autocomplete for searchable/filterable list
+        host_name = questionary.autocomplete(
+            f"Select host in {company} (type to search):",
+            choices=choices,
+            match_middle=True  # Allow matching anywhere in the string
         ).ask()
 
         if host_name is None:  # ESC or Ctrl+C

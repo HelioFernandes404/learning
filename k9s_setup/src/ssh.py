@@ -7,6 +7,8 @@ and file transfers via SFTP.
 
 import os
 import time
+import hashlib
+from pathlib import Path
 from paramiko import SSHConfig, SSHClient
 from paramiko.proxy import ProxyCommand
 import paramiko
@@ -204,3 +206,119 @@ def fetch_remote_file(ssh: SSHClient, path: str, max_retries: int = 2) -> str:
             wait_time = 2 ** (attempt - 1)
             logger.warning(f"SFTP fetch failed (attempt {attempt}): {e}. Retrying in {wait_time}s...")
             time.sleep(wait_time)
+
+
+def get_remote_file_hash(ssh: SSHClient, path: str) -> str:
+    """
+    Calculate SHA256 hash of remote file without downloading it.
+
+    Args:
+        ssh: Connected SSHClient instance
+        path: Remote file path
+
+    Returns:
+        str: SHA256 hash of file contents
+
+    Raises:
+        RuntimeError: If remote hash calculation fails
+    """
+    # Try sha256sum first (most common), fallback to shasum -a 256
+    commands = [
+        f"sha256sum {path} 2>/dev/null | awk '{{print $1}}'",
+        f"shasum -a 256 {path} 2>/dev/null | awk '{{print $1}}'",
+    ]
+
+    for cmd in commands:
+        try:
+            stdin, stdout, stderr = ssh.exec_command(cmd)
+            hash_output = stdout.read().decode().strip()
+            if hash_output and len(hash_output) == 64:  # SHA256 is 64 hex chars
+                logger.debug(f"Remote file hash: {hash_output[:16]}...")
+                return hash_output
+        except Exception as e:
+            logger.debug(f"Hash command failed: {cmd}: {e}")
+            continue
+
+    raise RuntimeError(f"Could not calculate remote file hash for {path}")
+
+
+def get_local_file_hash(file_path: Path) -> Optional[str]:
+    """
+    Calculate SHA256 hash of local file.
+
+    Args:
+        file_path: Path to local file
+
+    Returns:
+        str: SHA256 hash or None if file doesn't exist
+    """
+    if not file_path.exists():
+        return None
+
+    try:
+        sha256 = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b''):
+                sha256.update(chunk)
+        hash_str = sha256.hexdigest()
+        logger.debug(f"Local file hash: {hash_str[:16]}...")
+        return hash_str
+    except Exception as e:
+        logger.warning(f"Failed to calculate local file hash: {e}")
+        return None
+
+
+def fetch_remote_file_cached(
+    ssh: SSHClient,
+    remote_path: str,
+    cache_path: Path,
+    max_retries: int = 2
+) -> tuple[str, bool]:
+    """
+    Fetch remote file with hash-based caching.
+
+    Compares remote file hash with cached file hash. Only downloads if different.
+
+    Args:
+        ssh: Connected SSHClient instance
+        remote_path: Remote file path to read
+        cache_path: Local cache file path
+        max_retries: Maximum number of fetch attempts
+
+    Returns:
+        tuple[str, bool]: (file_contents, was_cached)
+            - file_contents: File contents as string
+            - was_cached: True if served from cache, False if downloaded
+
+    Raises:
+        Exception: On hash calculation or fetch failure
+    """
+    # Get remote file hash
+    try:
+        remote_hash = get_remote_file_hash(ssh, remote_path)
+    except Exception as e:
+        logger.warning(f"Could not get remote hash, will download file: {e}")
+        # Fallback to direct fetch if hash fails
+        content = fetch_remote_file(ssh, remote_path, max_retries)
+        return content, False
+
+    # Get local cache hash
+    local_hash = get_local_file_hash(cache_path)
+
+    # Compare hashes
+    if local_hash and local_hash == remote_hash:
+        logger.info(f"Cache hit! Using cached kubeconfig (hash: {remote_hash[:16]}...)")
+        with open(cache_path, 'r') as f:
+            return f.read(), True
+
+    # Cache miss - download file
+    logger.info(f"Cache miss. Downloading kubeconfig (remote hash: {remote_hash[:16]}...)")
+    content = fetch_remote_file(ssh, remote_path, max_retries)
+
+    # Update cache
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, 'w') as f:
+        f.write(content)
+    logger.debug(f"Updated cache: {cache_path}")
+
+    return content, False

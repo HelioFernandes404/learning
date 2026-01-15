@@ -22,9 +22,9 @@ class TestSelectCompany:
                 with open(inv_file, 'w') as f:
                     yaml.dump({"all": {}}, f)
 
-            # Mock questionary.select
-            with patch('src.cli.questionary.select') as mock_select:
-                mock_select.return_value.ask.return_value = "company1"
+            # Mock questionary.autocomplete
+            with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+                mock_autocomplete.return_value.ask.return_value = "company1"
                 company, inv_data = select_company(inv_dir)
 
             assert company == "company1"
@@ -40,8 +40,8 @@ class TestSelectCompany:
                 yaml.dump({"all": {}}, f)
 
             # Mock user cancelling (ESC or Ctrl+C)
-            with patch('src.cli.questionary.select') as mock_select:
-                mock_select.return_value.ask.return_value = None
+            with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+                mock_autocomplete.return_value.ask.return_value = None
                 company, inv_data = select_company(inv_dir)
 
             assert company is None
@@ -76,8 +76,8 @@ class TestSelectHost:
             }
         }
 
-        with patch('src.cli.questionary.select') as mock_select:
-            mock_select.return_value.ask.return_value = "host1"
+        with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+            mock_autocomplete.return_value.ask.return_value = "host1"
             host_name, host_info = select_host("test", inv_data)
 
         assert host_name == "host1"
@@ -101,12 +101,12 @@ class TestSelectHost:
             }
         }
 
-        with patch('src.cli.questionary.select') as mock_select:
-            mock_select.return_value.ask.return_value = "vpnhost"
+        with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+            mock_autocomplete.return_value.ask.return_value = "vpnhost"
             select_host("test", inv_data)
 
         # Verify that the choice label contains [VPN]
-        call_args = mock_select.call_args
+        call_args = mock_autocomplete.call_args
         choices = call_args[1]['choices']
         assert any("[VPN]" in choice.title for choice in choices)
 
@@ -124,12 +124,12 @@ class TestSelectHost:
             }
         }
 
-        with patch('src.cli.questionary.select') as mock_select:
-            mock_select.return_value.ask.return_value = "privatehost"
+        with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+            mock_autocomplete.return_value.ask.return_value = "privatehost"
             select_host("test", inv_data)
 
         # Verify that the choice label contains [sshuttle]
-        call_args = mock_select.call_args
+        call_args = mock_autocomplete.call_args
         choices = call_args[1]['choices']
         assert any("[sshuttle" in choice.title for choice in choices)
 
@@ -147,8 +147,8 @@ class TestSelectHost:
             }
         }
 
-        with patch('src.cli.questionary.select') as mock_select:
-            mock_select.return_value.ask.return_value = None
+        with patch('src.cli.questionary.autocomplete') as mock_autocomplete:
+            mock_autocomplete.return_value.ask.return_value = None
             host_name, host_info = select_host("test", inv_data)
 
         assert host_name is None

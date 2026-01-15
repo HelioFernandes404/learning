@@ -17,7 +17,7 @@ class TestFetchAndMergeKubeconfig:
     """Tests for fetch_and_merge_kubeconfig function."""
 
     def test_returns_context_name_and_port(self):
-        """Returns tuple of context_name, local_port, internal_ip, and new_content."""
+        """Returns tuple of context_name, local_port, internal_ip, new_content, and was_cached."""
         mock_ssh = MagicMock()
         mock_ssh.exec_command.return_value = (
             MagicMock(),  # stdin
@@ -25,9 +25,9 @@ class TestFetchAndMergeKubeconfig:
             MagicMock()   # stderr
         )
 
-        # Mock fetch_remote_file
-        with patch('fetch_k3s_config.fetch_remote_file') as mock_fetch:
-            mock_fetch.return_value = """
+        # Mock fetch_remote_file_cached
+        with patch('fetch_k3s_config.fetch_remote_file_cached') as mock_fetch:
+            mock_fetch.return_value = ("""
 apiVersion: v1
 clusters:
 - cluster:
@@ -42,10 +42,10 @@ users:
 - name: default
   user:
     token: test-token
-"""
+""", False)  # (content, was_cached)
 
             with patch('fetch_k3s_config.merge_kubeconfig'):
-                context_name, port, internal_ip, new_content = fetch_and_merge_kubeconfig(
+                context_name, port, internal_ip, new_content, was_cached = fetch_and_merge_kubeconfig(
                     company="test-company",
                     host_alias="test-host",
                     host_info={"group": "k3s_cluster"},
@@ -61,6 +61,7 @@ users:
         assert 16443 <= port < 26443
         assert internal_ip == "10.0.0.1"
         assert "apiVersion: v1" in new_content
+        assert was_cached is False
 
     def test_closes_ssh_connection_on_error(self):
         """Closes SSH connection when created internally and fetch fails."""
@@ -87,8 +88,8 @@ users:
         mock_ssh = MagicMock()
 
         with patch('fetch_k3s_config.get_internal_ip', return_value="10.0.0.1"):
-            with patch('fetch_k3s_config.fetch_remote_file') as mock_fetch:
-                mock_fetch.return_value = """
+            with patch('fetch_k3s_config.fetch_remote_file_cached') as mock_fetch:
+                mock_fetch.return_value = ("""
 apiVersion: v1
 clusters:
 - cluster:
@@ -103,9 +104,9 @@ users:
 - name: default
   user:
     token: token
-"""
+""", False)  # (content, was_cached)
                 with patch('fetch_k3s_config.merge_kubeconfig'):
-                    context_name, port, internal_ip, new_content = fetch_and_merge_kubeconfig(
+                    context_name, port, internal_ip, new_content, was_cached = fetch_and_merge_kubeconfig(
                         company="test",
                         host_alias="host",
                         host_info={},

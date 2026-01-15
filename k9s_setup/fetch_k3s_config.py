@@ -35,7 +35,7 @@ import questionary
 # Import local modules
 from src.inventory import load_inventories, extract_hosts_from_inventory
 from src.network import is_private_network, check_vpn_requirement, check_network_requirement
-from src.ssh import load_ssh_config, make_ssh_client, get_internal_ip, fetch_remote_file
+from src.ssh import load_ssh_config, make_ssh_client, get_internal_ip, fetch_remote_file_cached
 from src.kubeconfig import update_kubeconfig_server, merge_kubeconfig
 from src.tunnel import (
     get_unique_port, get_tunnel_pid_file, is_tunnel_running,
@@ -47,8 +47,8 @@ from src.logging_config import setup_logging, get_logger
 # Load environment variables from .env file
 load_dotenv()
 
-# Load config from file (optional) and merge with env vars
-CONFIG_FILE = os.getenv("CONFIG_FILE", "~/.k9s-config/config.yaml")
+# Load config from project's config.yaml
+CONFIG_FILE = os.getenv("CONFIG_FILE", str(Path(__file__).parent / "config.yaml"))
 from src.config import load_config, get_config_value
 config = load_config(os.path.expanduser(CONFIG_FILE))
 
@@ -59,8 +59,16 @@ TARGET_PORT = int(get_config_value(config, 'k3s_api_port', 6443))
 PORT_RANGE_START = int(get_config_value(config, 'port_range_start', 16443))
 PORT_RANGE_SIZE = int(get_config_value(config, 'port_range_size', 10000))
 SSH_CONFIG_PATH = os.path.expanduser("~/.ssh/config")
-INVENTORY_PATH = Path(__file__).parent / "inventory"
+
+# Inventory path: from config file or default to ./inventory
+inventory_from_config = get_config_value(config, 'inventory_path', None)
+if inventory_from_config:
+    INVENTORY_PATH = Path(os.path.expanduser(inventory_from_config))
+else:
+    INVENTORY_PATH = Path(__file__).parent / "inventory"
+
 TUNNEL_STATE_DIR = Path.home() / ".local" / "state" / "k9s-tunnels"
+CACHE_DIR = Path.home() / ".cache" / "k9s-config"
 
 
 def fetch_and_merge_kubeconfig(
@@ -120,11 +128,14 @@ def fetch_and_merge_kubeconfig(
         internal_ip = get_internal_ip(ssh_client)
         logger.debug(f"Detected internal IP for {host_alias}")
 
-        # Fetch kubeconfig
-        content = fetch_remote_file(ssh_client, remote_path)
-
-        # Define context name
+        # Define context name and cache path
         context_name = f"{company}-{host_alias}"
+        cache_path = CACHE_DIR / f"{context_name}.yml"
+
+        # Fetch kubeconfig with caching
+        content, was_cached = fetch_remote_file_cached(
+            ssh_client, remote_path, cache_path
+        )
 
         # Generate unique port
         local_port = get_unique_port(context_name, port_range_start, port_range_size)
@@ -138,7 +149,7 @@ def fetch_and_merge_kubeconfig(
         # Merge into ~/.kube/config
         merge_kubeconfig(new_content, context_name)
 
-        return context_name, local_port, internal_ip, new_content
+        return context_name, local_port, internal_ip, new_content, was_cached
     finally:
         # Only close if we created the client
         if created_client and ssh_client:
@@ -149,6 +160,7 @@ def main():
     log_file_path = os.path.expanduser(os.getenv("K9S_LOG_FILE", "~/.local/state/k9s/k9s-config.log"))
     logger = setup_logging(log_file=log_file_path)
     logger.info("Starting k9s-config fetcher")
+    logger.debug(f"Using inventory path: {INVENTORY_PATH}")
 
     # Outer loop: company selection
     while True:
@@ -228,7 +240,7 @@ def main():
             try:
                 print("Connected — detecting remote internal IP...")
                 # Fetch and merge kubeconfig
-                context_name, local_port, internal_ip, new_content = fetch_and_merge_kubeconfig(
+                context_name, local_port, internal_ip, new_content, was_cached = fetch_and_merge_kubeconfig(
                     company=company,
                     host_alias=host_alias,
                     host_info=host_info,
@@ -241,7 +253,10 @@ def main():
 
                 # Don't log the actual IP for security reasons
                 print("Internal IP detected successfully")
-                print(f"Fetching remote kubeconfig: {REMOTE_PATH}")
+                if was_cached:
+                    print(f"✓ Using cached kubeconfig (unchanged on remote)")
+                else:
+                    print(f"Fetching remote kubeconfig: {REMOTE_PATH}")
                 print("Updating server: field in kubeconfig...")
                 print(f"Configuring kubeconfig to use SSH tunnel (localhost:{local_port})")
                 print(f"Merging into ~/.kube/config as context '{context_name}'...")
