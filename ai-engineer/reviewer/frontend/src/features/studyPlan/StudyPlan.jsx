@@ -45,62 +45,98 @@ export const StudyPlan = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Carregando plano de estudo...</div>;
+  if (loading) return (
+    <div className="p-20 text-center space-y-4">
+      <div className="animate-spin inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      <p className="text-slate-500 font-medium italic">Organizando seu currículo...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-blue-600" /> Plano de Estudo
-        </h2>
-        <div className="flex gap-2">
+    <div className="max-w-5xl mx-auto space-y-10 pb-20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <Calendar className="h-6 w-6 text-indigo-600" />
+            </div>
+            Plano de Estudo
+          </h2>
+          <p className="text-slate-500 font-medium">Sua jornada dividida em blocos mensais de foco.</p>
+        </div>
+        
+        <div className="flex gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200/60">
           <Input 
-            placeholder="Novo Mês (ex: Fundamentos)" 
+            placeholder="Título do novo módulo..." 
             value={newMonthTitle}
             onChange={(e) => setNewMonthTitle(e.target.value)}
-            className="w-64"
+            className="w-64 border-0 focus-visible:ring-0 bg-transparent font-medium"
           />
-          <Button onClick={handleAddMonth} size="sm">
-            <PlusCircle className="h-4 w-4 mr-2" /> Adicionar Mês
+          <Button onClick={handleAddMonth} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-4 font-bold shadow-md shadow-indigo-100 transition-all hover:-translate-y-0.5">
+            <PlusCircle className="h-4 w-4 mr-2" /> Novo Mês
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {months.map((month) => {
           const monthCards = cards.filter(c => c.month_id === month.id);
           return (
-            <Card key={month.id} className="hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Mês {month.number}: {month.title}</span>
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                    {monthCards.length} cards
-                  </span>
-                </CardTitle>
+            <Card key={month.id} className="group border-0 shadow-sm hover:shadow-xl hover:shadow-indigo-100/40 transition-all duration-300 bg-white overflow-hidden ring-1 ring-slate-200/60 rounded-3xl">
+              <div className="h-2 bg-indigo-600/10 group-hover:bg-indigo-600 transition-colors duration-300" />
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Módulo {month.number}</span>
+                    <CardTitle className="text-xl font-bold text-slate-800 pt-1">{month.title}</CardTitle>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-slate-400 group-hover:text-indigo-600 transition-colors">
+                      {monthCards.length} {monthCards.length === 1 ? 'CARD' : 'CARDS'}
+                    </span>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {monthCards.length > 0 ? (
-                    monthCards.slice(0, 5).map(card => (
-                      <div key={card.id} className="text-sm border-b pb-1 last:border-0 truncate text-slate-600">
-                        • {card.question}
-                      </div>
-                    ))
+                    <div className="space-y-2.5">
+                      {monthCards.slice(0, 4).map(card => (
+                        <div key={card.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/50 border border-transparent hover:border-slate-100 hover:bg-white transition-all group/item">
+                          <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-300 group-hover/item:bg-indigo-400 transition-colors" />
+                          <p className="text-sm font-medium text-slate-600 group-hover/item:text-slate-900 transition-colors line-clamp-2">
+                            {card.question}
+                          </p>
+                        </div>
+                      ))}
+                      {monthCards.length > 4 && (
+                        <div className="pt-2 text-center">
+                          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                            + {monthCards.length - 4} tópicos adicionais
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic">Nenhum card associado</p>
-                  )}
-                  {monthCards.length > 5 && (
-                    <p className="text-xs text-blue-600 font-medium">+{monthCards.length - 5} mais...</p>
+                    <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                      <p className="text-xs text-slate-400 font-medium italic">Nenhum tópico cadastrado ainda.</p>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
+        
         {months.length === 0 && (
-          <div className="col-span-full p-12 text-center border-2 border-dashed rounded-xl bg-slate-50">
-            <p className="text-slate-500">Nenhum mês cadastrado. Comece adicionando o "Mês 1".</p>
+          <div className="col-span-full py-24 text-center space-y-4 bg-white rounded-[2rem] border-2 border-dashed border-slate-200 shadow-inner shadow-slate-50">
+            <div className="inline-flex p-4 bg-slate-50 rounded-full text-slate-300">
+              <Calendar className="h-10 w-10" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-slate-800">Seu plano está vazio</h3>
+              <p className="text-slate-400 text-sm max-w-xs mx-auto">Comece definindo o seu primeiro mês de foco para organizar seus estudos.</p>
+            </div>
           </div>
         )}
       </div>
