@@ -11,7 +11,15 @@ class CardService:
         self.reset_to = os.getenv("REVIEW_RESET_TO", "D2")
 
     def create_card(self, question: str, month_id: int = None, current_stage: int = 0):
-        return self.card_repo.create(question, month_id, current_stage)
+        from app.services.spaced_repetition import CYCLE
+        from datetime import datetime, timedelta
+        
+        days_to_add = 0
+        if 0 <= current_stage < len(CYCLE):
+            days_to_add = CYCLE[current_stage]
+        
+        next_review_date = datetime.now().date() + timedelta(days=days_to_add)
+        return self.card_repo.create(question, month_id, current_stage, next_review_date)
 
     def get_all_cards(self):
         return self.card_repo.get_all()

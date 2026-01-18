@@ -28,7 +28,7 @@ class CardResponse(BaseModel):
 
 class StudyMonthCreate(BaseModel):
     title: str
-    number: int
+    number: Optional[int] = None
 
 class StudyMonthResponse(BaseModel):
     id: int
