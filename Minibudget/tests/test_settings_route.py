@@ -1,26 +1,9 @@
 import pytest
 import sys
 import os
-import tempfile
 
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from app import app, db
-
-@pytest.fixture
-def client():
-    db_fd, db_path = tempfile.mkstemp()
-    app.config['DATABASE'] = db_path
-    app.config['TESTING'] = True
-
-    with app.test_client() as client:
-        with app.app_context():
-            db.init_db()
-        yield client
-
-    os.close(db_fd)
-    os.unlink(db_path)
 
 def test_settings_page_loads(client):
     rv = client.get('/settings')
