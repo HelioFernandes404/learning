@@ -345,3 +345,76 @@ header {
 }
 .progress-fill.danger { background-color: var(--danger); }
 .progress-fill.success { background-color: var(--success); }
+
+/* =========================================
+   4. CALCULATOR WIDGET
+   ========================================= */
+.calculator-widget {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 100;
+}
+
+#calculator-toggle {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 1.5rem;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.calculator-panel {
+    position: absolute;
+    bottom: 4rem;
+    right: 0;
+    width: 300px;
+    background-color: var(--card);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    transform-origin: bottom right;
+}
+
+.calculator-panel.hidden {
+    display: none;
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+.calc-btn {
+    height: 3rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.calc-btn-op {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+}
+
+.calc-btn-eq {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.calc-btn-clear {
+    color: var(--destructive);
+}
+
+#calc-display {
+    font-family: inherit;
+    font-size: 1.5rem;
+    padding: 0.75rem;
+    height: auto;
+    background-color: var(--muted);
+    border: none;
+    margin-bottom: 1rem;
+}

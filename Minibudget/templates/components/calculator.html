@@ -1,0 +1,49 @@
+{% import 'components/icons.html' as icons %}
+
+<div id="calculator-widget" class="calculator-widget">
+    <button id="calculator-toggle" class="btn" title="Calculadora">
+        {{ icons.icon('calculator', weight='bold') }}
+    </button>
+    
+    <div id="calculator-panel" class="card calculator-panel hidden">
+        <div class="card-header flex flex-row justify-between items-center" style="padding: 1rem;">
+            <span class="card-title text-sm">Calculadora</span>
+            <button id="calculator-close" class="btn btn-ghost btn-sm btn-icon">
+                {{ icons.icon('x') }}
+            </button>
+        </div>
+        
+        <div class="card-content" style="padding: 1rem; padding-top: 0;">
+            <input type="text" id="calc-display" class="input text-right font-bold" readonly value="0">
+            
+            <div class="calculator-grid">
+                <!-- Row 1 -->
+                <button class="btn btn-secondary calc-btn calc-btn-clear" onclick="calcClear()">C</button>
+                <button class="btn btn-secondary calc-btn calc-btn-op" onclick="calcOp('/')">÷</button>
+                <button class="btn btn-secondary calc-btn calc-btn-op" onclick="calcOp('*')">×</button>
+                <button class="btn btn-secondary calc-btn calc-btn-op" onclick="calcOp('-')">−</button>
+                
+                <!-- Row 2 -->
+                <button class="btn btn-outline calc-btn" onclick="calcNum('7')">7</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('8')">8</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('9')">9</button>
+                <button class="btn btn-secondary calc-btn calc-btn-op" onclick="calcOp('+')">+</button>
+                
+                <!-- Row 3 -->
+                <button class="btn btn-outline calc-btn" onclick="calcNum('4')">4</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('5')">5</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('6')">6</button>
+                <button class="btn btn-primary calc-btn calc-btn-eq" style="grid-row: span 3;" onclick="calcEqual()">=</button>
+                
+                <!-- Row 4 -->
+                <button class="btn btn-outline calc-btn" onclick="calcNum('1')">1</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('2')">2</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('3')">3</button>
+                
+                <!-- Row 5 -->
+                <button class="btn btn-outline calc-btn" style="grid-column: span 2;" onclick="calcNum('0')">0</button>
+                <button class="btn btn-outline calc-btn" onclick="calcNum('.')">,</button>
+            </div>
+        </div>
+    </div>
+</div>
