@@ -4,7 +4,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/data
+      - reviewer-data:/data
     environment:
       - DATABASE_URL=sqlite:////data/reviewer.db
       - REVIEW_RESET_TO=D2
@@ -18,3 +18,7 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+volumes:
+  reviewer-data:
+    driver: local
