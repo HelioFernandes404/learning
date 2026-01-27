@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { CreateCard } from './features/cards/CreateCard';
-import { CardList } from './features/cards/CardList';
-import { TodayReviews } from './features/reviews/TodayReviews';
-import { StudyPlan } from './features/studyPlan/StudyPlan';
-import { HowItWorks } from './features/info/HowItWorks';
-import { LearningStrategy } from './features/info/LearningStrategy';
-import { cardApi } from './shared/api/cardApi';
-import { Button } from './shared/ui/button';
-import { LayoutGrid, Calendar, ListTodo, Settings, HelpCircle, BrainCircuit } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { CreateCard } from "./features/cards/CreateCard";
+import { CardList } from "./features/cards/CardList";
+import { TodayReviews } from "./features/reviews/TodayReviews";
+import { StudyPlan } from "./features/studyPlan/StudyPlan";
+import { HowItWorks } from "./features/info/HowItWorks";
+import { LearningStrategy } from "./features/info/LearningStrategy";
+import { cardApi } from "./shared/api/cardApi";
+import { Button } from "./shared/ui/button";
+import {
+  LayoutGrid,
+  Calendar,
+  ListTodo,
+  Settings,
+  HelpCircle,
+  BrainCircuit,
+} from "lucide-react";
 
 function App() {
-  const [view, setView] = useState('today'); 
+  const [view, setView] = useState("today");
   const [cards, setCards] = useState([]);
 
   const fetchCards = async () => {
@@ -18,7 +25,7 @@ function App() {
       const response = await cardApi.getCards();
       setCards(response.data);
     } catch (error) {
-      console.error('Failed to fetch cards', error);
+      console.error("Failed to fetch cards", error);
     }
   };
 
@@ -34,25 +41,29 @@ function App() {
             <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-indigo-200 shadow-lg mb-2">
               <ListTodo className="h-7 w-7" />
             </div>
-            <h1 className="text-4xl font-black tracking-tight text-slate-900">Reviewer</h1>
-            <p className="text-slate-500 font-medium tracking-wide uppercase text-xs">O seu ritual de estudo guiado</p>
+            <h1 className="text-4xl font-black tracking-tight text-slate-900">
+              Reviewer
+            </h1>
+            <p className="text-slate-500 font-medium tracking-wide uppercase text-xs">
+              O seu ritual de estudo guiado
+            </p>
           </div>
-          
+
           <nav className="inline-flex bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl shadow-sm border border-slate-200/60 flex-wrap justify-center">
             {[
-              { id: 'today', label: 'Hoje', icon: LayoutGrid },
-              { id: 'plan', label: 'Plano', icon: Calendar },
-              { id: 'strategy', label: 'Estratégia', icon: BrainCircuit },
-              { id: 'manage', label: 'Gerenciar', icon: Settings },
-              { id: 'how', label: 'Como funciona', icon: HelpCircle },
+              { id: "today", label: "Hoje", icon: LayoutGrid },
+              { id: "plan", label: "Plano", icon: Calendar },
+              { id: "manage", label: "Gerenciar", icon: Settings },
+              { id: "strategy", label: "Estratégia", icon: BrainCircuit },
+              { id: "how", label: "Como funciona", icon: HelpCircle },
             ].map((item) => (
-              <Button 
+              <Button
                 key={item.id}
-                variant={view === item.id ? 'default' : 'ghost'}
+                variant={view === item.id ? "default" : "ghost"}
                 className={`px-6 py-2 rounded-xl transition-all duration-200 ${
-                  view === item.id 
-                    ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700' 
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  view === item.id
+                    ? "bg-indigo-600 text-white shadow-md hover:bg-indigo-700"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                 }`}
                 onClick={() => setView(item.id)}
               >
@@ -64,29 +75,27 @@ function App() {
         </header>
 
         <main className="transition-all duration-300 ease-in-out">
-          {view === 'today' && (
-            <TodayReviews onReviewComplete={fetchCards} />
-          )}
-          
-          {view === 'plan' && (
-            <StudyPlan />
-          )}
+          {view === "today" && <TodayReviews onReviewComplete={fetchCards} />}
 
-          {view === 'strategy' && (
+          {view === "plan" && <StudyPlan />}
+
+          {view === "strategy" && (
             <LearningStrategy onNavigate={(v) => setView(v)} />
           )}
 
-          {view === 'how' && (
-            <HowItWorks onNavigate={(v) => setView(v)} />
-          )}
-          
-          {view === 'manage' && (
+          {view === "how" && <HowItWorks onNavigate={(v) => setView(v)} />}
+
+          {view === "manage" && (
             <div className="max-w-3xl mx-auto space-y-12">
               <CreateCard onCardCreated={fetchCards} />
               <div className="pt-4">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-slate-800">Todos os Cards</h2>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full">{cards.length} no total</span>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    Todos os Cards
+                  </h2>
+                  <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full">
+                    {cards.length} no total
+                  </span>
                 </div>
                 <CardList cards={cards} onCardDeleted={fetchCards} />
               </div>
