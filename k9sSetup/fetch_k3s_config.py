@@ -33,7 +33,7 @@ import hashlib
 import questionary
 
 # Import local modules
-from src.inventory import load_inventories, extract_hosts_from_inventory
+from src.inventory import load_inventories, extract_hosts_from_inventory, update_inventory_repo
 from src.network import is_private_network, check_vpn_requirement, check_network_requirement
 from src.ssh import load_ssh_config, make_ssh_client, get_internal_ip, fetch_remote_file_cached
 from src.kubeconfig import update_kubeconfig_server, merge_kubeconfig
@@ -162,6 +162,15 @@ def main():
     logger.info("Starting k9s-config fetcher")
     logger.debug(f"Using inventory path: {INVENTORY_PATH}")
 
+    # Update inventory repository before loading
+    if INVENTORY_PATH.exists():
+        print("Updating inventory repository...")
+        success, message = update_inventory_repo(INVENTORY_PATH)
+        if success:
+            print(f"✓ {message}")
+        else:
+            print(f"⚠️  {message} (continuing with local version)")
+
     # Outer loop: company selection
     while True:
         company, inv_data = select_company(INVENTORY_PATH)
@@ -214,7 +223,15 @@ def main():
             print(f"\nReading SSH config (~/.ssh/config) for host alias '{host_alias}'...")
             cfg = load_ssh_config(host_alias, SSH_CONFIG_PATH)
 
-            hostname = cfg.get("hostname", host_alias)
+            # Priority: ansible_host from inventory > hostname from SSH config > host_alias
+            inventory_host = host_info.get("config", {}).get("ansible_host")
+            if inventory_host:
+                hostname = inventory_host
+                cfg["hostname"] = hostname  # Update cfg so fetch_and_merge_kubeconfig uses it
+                print(f"Using ansible_host from inventory: {hostname}")
+            else:
+                hostname = cfg.get("hostname", host_alias)
+
             username = cfg.get("user", "ubuntu")
             port = int(cfg.get("port", 22))
             identity_files = cfg.get("identityfile")
@@ -275,15 +292,17 @@ def main():
                 if is_tunnel_running(context_name):
                     print(f"✓ Tunnel already running for {context_name}")
                 else:
-                    print(f"Creating tunnel: {host_alias} -> localhost:{local_port} -> {internal_ip}:6443")
+                    # Use hostname (from inventory) instead of alias (from ssh config)
+                    ssh_target = f"{username}@{hostname}"
+                    print(f"Creating tunnel: {ssh_target} -> localhost:{local_port} -> {internal_ip}:6443")
                     try:
-                        pid = create_tunnel(host_alias, internal_ip, local_port, TARGET_PORT)
+                        pid = create_tunnel(ssh_target, internal_ip, local_port, TARGET_PORT)
                         save_tunnel_pid(context_name, pid)
                         print(f"✓ SSH tunnel created (PID: {pid})")
                     except Exception as e:
                         print(f"⚠️  Failed to create tunnel: {e}")
                         print(f"   You'll need to create it manually:")
-                        print(f"   ssh -f -N -L {local_port}:{internal_ip}:{TARGET_PORT} {host_alias}")
+                        print(f"   ssh -f -N -L {local_port}:{internal_ip}:{TARGET_PORT} {ssh_target}")
 
                 print(f"\nYou can now use kubectl/k9s directly!")
                 print(f"  kubectl get nodes")

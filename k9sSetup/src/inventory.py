@@ -6,9 +6,76 @@ for custom YAML tags like !vault.
 """
 
 import sys
+import subprocess
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
+
+from .logging_config import get_logger
+
+
+def update_inventory_repo(inventory_path: Path) -> Tuple[bool, str]:
+    """
+    Update the git repository containing the inventory files.
+
+    Finds the git root of the inventory path and runs git pull.
+
+    Args:
+        inventory_path: Path to inventory directory
+
+    Returns:
+        tuple: (success: bool, message: str)
+    """
+    logger = get_logger()
+
+    # Find git root from inventory path
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=inventory_path,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode != 0:
+            return False, "Inventory path is not in a git repository"
+
+        git_root = Path(result.stdout.strip())
+        logger.debug(f"Found git root: {git_root}")
+
+    except subprocess.TimeoutExpired:
+        return False, "Timeout finding git root"
+    except FileNotFoundError:
+        return False, "git command not found"
+
+    # Run git pull
+    try:
+        logger.info(f"Updating inventory repository: {git_root}")
+        result = subprocess.run(
+            ["git", "pull", "--ff-only"],
+            cwd=git_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode == 0:
+            output = result.stdout.strip()
+            if "Already up to date" in output:
+                logger.debug("Inventory already up to date")
+                return True, "Already up to date"
+            else:
+                logger.info(f"Inventory updated: {output}")
+                return True, f"Updated: {output.split(chr(10))[0]}"
+        else:
+            error = result.stderr.strip() or result.stdout.strip()
+            logger.warning(f"Git pull failed: {error}")
+            return False, f"Git pull failed: {error}"
+
+    except subprocess.TimeoutExpired:
+        return False, "Timeout during git pull"
+    except Exception as e:
+        return False, f"Error during git pull: {e}"
 
 
 def load_inventories(inventory_path: Optional[Path] = None) -> Dict[str, Any]:
